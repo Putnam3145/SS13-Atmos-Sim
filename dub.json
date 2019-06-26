@@ -1,0 +1,13 @@
+{
+	"authors": [
+		"Putnam"
+	],
+	"dependencies": {
+		"quantities": "~>0.9.1",
+		
+	},
+	"copyright": "Copyright © 2019, Putnam",
+	"description": "Atmos replacement code for SS13.",
+	"license": "GPL-3.0",
+	"name": "atmos"
+}
