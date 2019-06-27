@@ -53,7 +53,7 @@ struct GasEntries
 */
 struct AtmosMixture
 {
-	GasEntries gases;
+    GasEntries gases;
     alias gases this;
     Temperature temperature = 0*kelvin;
     Volume volume = cellVolume;

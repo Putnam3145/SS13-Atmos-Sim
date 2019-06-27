@@ -6,14 +6,14 @@ import atmos.constants;
 
 struct GasDatum
 {
-	string id = "";
-	SpecificHeatCapacity specificHeat = 0*specHeatUnit;
-	string name = "";
-	int rarity = 0;
-	string gasOverlay = "";
-	AmountOfSubstance molesVisible = -1*mole;
+    string id = "";
+    SpecificHeatCapacity specificHeat = 0*specHeatUnit;
+    string name = "";
+    int rarity = 0;
+    string gasOverlay = "";
+    AmountOfSubstance molesVisible = -1*mole;
     bool dangerous = false;
-	int fusionPower = 0;
+    int fusionPower = 0;
 }
 
 //enum that holds the gases -- all the other stuff is sort of compile-time expanded from this

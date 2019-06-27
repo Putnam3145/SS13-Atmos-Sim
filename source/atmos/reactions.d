@@ -131,8 +131,8 @@ pure @safe private ReactionFlag tritFire(ref AtmosMixture air) /// note: based o
     enum tritiumBurnTritFactor = 10;
     enum fireHydrogenEnergyReleased = 560 * kilo(joule)/mole;
     auto energyReleased = 0 * joule;
-	auto burnedFuel = 0 * mole;
-	auto initialTrit = air[getGas!"tritium"];
+    auto burnedFuel = 0 * mole;
+    auto initialTrit = air[getGas!"tritium"];
     auto oldEnergy = air.thermalEnergy;
     if(air[getGas!"o2"]<initialTrit || oldEnergy<=minimumOxyBurnEnergy)
     {
@@ -243,14 +243,14 @@ pure @safe private ReactionFlag nobliumFormation(ref AtmosMixture air)
     import std.algorithm : min,max;
     auto nobFormed = min((air[getGas!"n2"]+air[getGas!"tritium"]/100).value(mole),(air[getGas!"tritium"]/10).value(mole),(air[getGas!"n2"]/20).value(mole)) * mole;
     Energy energyTaken = (nobFormed * nobliumFormationEnergy) / max(air[getGas!"bz"].value(mole),1);
-	if ((air[getGas!"tritium"] < 10*nobFormed) || (air[getGas!"n2"] < 20*nobFormed))
+    if ((air[getGas!"tritium"] < 10*nobFormed) || (air[getGas!"n2"] < 20*nobFormed))
     {
         return ReactionFlag.NO_REACTION;
     }
-	air[getGas!"tritium"] -= 10*nobFormed;
-	air[getGas!"n2"] -= 20*nobFormed;
-	air[getGas!"nob"] += nobFormed;
-	//SSresearch.science_tech.add_point_type(TECHWEB_POINT_TYPE_DEFAULT, nob_formed*NOBLIUM_RESEARCH_AMOUNT)
+    air[getGas!"tritium"] -= 10*nobFormed;
+    air[getGas!"n2"] -= 20*nobFormed;
+    air[getGas!"nob"] += nobFormed;
+    //SSresearch.science_tech.add_point_type(TECHWEB_POINT_TYPE_DEFAULT, nob_formed*NOBLIUM_RESEARCH_AMOUNT)
     if(energyTaken != 0*joule)
     {
         air.temperature = (oldEnergy-energyTaken)/air.heatCapacity;
@@ -273,9 +273,9 @@ pure @safe private ReactionFlag stimFormation(ref AtmosMixture air)
         return ReactionFlag.NO_REACTION;
     }
     const AmountOfSubstance moleChange = heatScale*(mole/joule); //stop making me do things like this. come up with real constants
-	air[getGas!"stim"] += moleChange/10;
-	air[getGas!"tritium"] -= moleChange;
-	air[getGas!"plasma"] -= moleChange;
+    air[getGas!"stim"] += moleChange/10;
+    air[getGas!"tritium"] -= moleChange;
+    air[getGas!"plasma"] -= moleChange;
     air[getGas!"no2"] -= moleChange;
     //add science points, 50/joule
     if(stimEnergyChange != 0*joule)
@@ -304,8 +304,8 @@ pure @safe private ReactionFlag bzFormation(ref AtmosMixture air)
         air[getGas!"bz"] -= nitrousBalanceChange;
         air[getGas!"o2"] += nitrousBalanceChange;
     }
-	air[getGas!"n2o"] -= reactionEfficiency;
-	air[getGas!"plasma"]  -= 2*reactionEfficiency;
+    air[getGas!"n2o"] -= reactionEfficiency;
+    air[getGas!"plasma"]  -= 2*reactionEfficiency;
     //SSresearch.science_tech.add_point_type(TECHWEB_POINT_TYPE_DEFAULT, min((reaction_efficency**2)*BZ_RESEARCH_SCALE),BZ_RESEARCH_MAX_AMOUNT)
     //we already returned if energyReleased is non-positive
     air.temperature = (oldEnergy+energyReleased)/air.heatCapacity;
@@ -317,15 +317,15 @@ pure @safe private ReactionFlag nitrylFormation(ref AtmosMixture air)
     enum nitrylFormationEnergy = 100000 * (joule/mole);
     import std.algorithm : min; //why am doing this each function? i dunno, feels better
     const auto oldEnergy = air.thermalEnergy;
-	const auto reactionEfficiency = min(air.temperature/(fireTemperature*100),air[getGas!"o2"].value(mole),air[getGas!"n2"].value(mole))*mole;
-	const auto energyUsed = reactionEfficiency*nitrylFormationEnergy;
+    const auto reactionEfficiency = min(air.temperature/(fireTemperature*100),air[getGas!"o2"].value(mole),air[getGas!"n2"].value(mole))*mole;
+    const auto energyUsed = reactionEfficiency*nitrylFormationEnergy;
     if ((air[getGas!"o2"] < reactionEfficiency )|| (air[getGas!"n2"] < (reactionEfficiency))) //Shouldn't produce gas from nothing.
     {
         return ReactionFlag.NO_REACTION;
     }
-	air[getGas!"o2"] -= reactionEfficiency;
-	air[getGas!"n2"] -= reactionEfficiency;
-	air[getGas!"no2"] += reactionEfficiency*2;
+    air[getGas!"o2"] -= reactionEfficiency;
+    air[getGas!"n2"] -= reactionEfficiency;
+    air[getGas!"no2"] += reactionEfficiency*2;
     air.temperature = (oldEnergy-energyUsed)/air.heatCapacity;
     return ReactionFlag.REACTING;
 }
@@ -358,9 +358,9 @@ pure @safe private ReactionFlag fusion(ref AtmosMixture air)
     auto carbon = (initialCarbon - fusionMoleThreshold) / scaleFactor;
     assert(plasma>0*mole,"Plasma is somehow negative after scaling!");
     assert(carbon>0*mole,"Plasma is somehow negative after scaling!");
-	plasma = abs((plasma.value(mole) - (instability*(sin(carbon.value(mole))))%toroidalSize)) * mole;
+    plasma = abs((plasma.value(mole) - (instability*(sin(carbon.value(mole))))%toroidalSize)) * mole;
     //count the rings. ss13's modulus is positive, this ain't, who knew
-	carbon = abs((carbon - plasma).value(mole)%toroidalSize)*mole;
+    carbon = abs((carbon - plasma).value(mole)%toroidalSize)*mole;
     air[getGas!"plasma"] = plasma*scaleFactor + fusionMoleThreshold;
     air[getGas!"co2"] = carbon*scaleFactor + fusionMoleThreshold;
     const auto deltaPlasma = initialPlasma - air[getGas!"plasma"];
@@ -384,12 +384,12 @@ pure @safe private ReactionFlag fusion(ref AtmosMixture air)
     if(reactionEnergy > 0*joule)
     {
         air[getGas!"o2"] += fusionTritiumMolesUsed*(reactionEnergy*fusionTritiumConversionCoefficient);
-		air[getGas!"n2o"] += fusionTritiumMolesUsed*(reactionEnergy*fusionTritiumConversionCoefficient);
+        air[getGas!"n2o"] += fusionTritiumMolesUsed*(reactionEnergy*fusionTritiumConversionCoefficient);
     }
     else
     {
         air[getGas!"bz"] += fusionTritiumMolesUsed*(reactionEnergy*-fusionTritiumConversionCoefficient);
-		air[getGas!"no2"] += fusionTritiumMolesUsed*(reactionEnergy*-fusionTritiumConversionCoefficient);
+        air[getGas!"no2"] += fusionTritiumMolesUsed*(reactionEnergy*-fusionTritiumConversionCoefficient);
     }
     if(reactionEnergy != 0*joule)
     {
