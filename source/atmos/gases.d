@@ -144,7 +144,7 @@ enum gasesAsArray = cast(GasDatum[numGases])(compiledOut);
 
 pragma(msg,gasesAsArray.length);
 
-GasDatum getGas(string s)() /// Gets gas by ID.
+GasDatum getGas(string s)() /// Gets gas by ID. Only doable at compile time.
 {
     static foreach(gas; gasesAsArray)
     {

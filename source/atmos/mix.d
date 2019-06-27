@@ -8,13 +8,18 @@ import atmos;
 */
 struct GasEntries 
 {
-    AmountOfSubstance[GasDatum] gases;
-    bool dirty = true;
+    AmountOfSubstance[GasDatum] gases; /// Gases by datum.
+    bool dirty = true; /// Whether or not the gas entry has been added to recently.
     alias gases this;
+    /** Accessing directly by gas datum instead of accessing gases, e.g. GasEntries[getGas!"plasma"] */
     pure @safe AmountOfSubstance opIndex(GasDatum gas)
     {
         return gases.get(gas,0*mole);
     }
+    /** Same as above, but assignment.
+        Actually does some further calculation: leads to undefined behavior of the mole total is less than 0,
+        if the mole total EQUALS zero then it deletes that particular entry for faster reactions,
+        if the mole total is more than previous it sets the entire GasEntries to dirty to flag it ready to maybe react.*/
     pure @safe AmountOfSubstance opIndexAssign(AmountOfSubstance moles,GasDatum gas)
     in
     {
@@ -33,6 +38,9 @@ struct GasEntries
             return gases[gas]=moles;
         }
     }
+    /**
+        Same as assignment, but for +=, -=, *= and /=. Note that + and - require proper units--you need to input moles!
+    */
     pure @safe AmountOfSubstance opIndexOpAssign(string op,T)(T value,GasDatum gas)
     {
         import std.traits : isNumeric;
@@ -53,21 +61,21 @@ struct GasEntries
 */
 struct AtmosMixture
 {
-    GasEntries gases;
+    GasEntries gases; /// See GasEntries.
     alias gases this;
-    Temperature temperature = 0*kelvin;
-    Volume volume = cellVolume;
-    AmountOfSubstance lastShare = 0*mole;
-    ReactionFlag previousResult = ReactionFlag.NO_REACTION;
-    this(Volume newVolume)
+    Temperature temperature = 0*kelvin; /// Current temperature in kelvins.
+    Volume volume = cellVolume; /// Volume. Default is 2500 liters.
+    AmountOfSubstance lastShare = 0*mole; /// Unused for now, until a more accurate-to-SS13 mixing operation is put in.
+    ReactionFlag previousResult = ReactionFlag.NO_REACTION; /// For faster reaction caching.
+    this(Volume newVolume) /// Making a new mixture with a given volume, in liters.
     {
         volume=newVolume;
     }
-    this(float newVolume)
+    this(float newVolume) /// Making a new mixture with a given volume. Float will be converted to liters.
     {
         this(newVolume*liter);
     }
-    pure @nogc @safe HeatCapacity heatCapacity()
+    pure @nogc @safe HeatCapacity heatCapacity() /// Returns current heat capacity of mixture, in joules/mole-kelvin.
     {
         HeatCapacity totalAmount=0*heatCapacityUnit;
         foreach(GasDatum gas,AmountOfSubstance amount;gases)
@@ -76,7 +84,7 @@ struct AtmosMixture
         }
         return totalAmount;
     }
-    pure @nogc @safe AmountOfSubstance totalMoles()
+    pure @nogc @safe AmountOfSubstance totalMoles() /// Returns the total moles currently in the mixture, in moles.
     {
         AmountOfSubstance totalAmount = 0*mole;
         foreach(GasDatum gas,AmountOfSubstance amount;gases)
@@ -85,7 +93,7 @@ struct AtmosMixture
         }
         return totalAmount;
     }
-    pure @nogc @safe Pressure pressure()
+    pure @nogc @safe Pressure pressure() /// Returns pressure, in pascals.
     in
     {
         assert(volume>0*liter); //no division by zero
@@ -94,11 +102,11 @@ struct AtmosMixture
     {
         return (gasConstant*totalMoles*temperature)/volume;
     }
-    pure @nogc @safe Energy thermalEnergy()
+    pure @nogc @safe Energy thermalEnergy() /// Returns thermal energy, in joules.
     {
         return heatCapacity*temperature;
     }
-    pure @safe void merge(AtmosMixture other)
+    pure @safe void merge(AtmosMixture other) /// Merges this atmos mixture with another.
     {
         temperature = (thermalEnergy + other.thermalEnergy) / (heatCapacity + other.heatCapacity);
         foreach(GasDatum gas,AmountOfSubstance amount;other.gases)
@@ -106,7 +114,7 @@ struct AtmosMixture
             this.gases[gas]+=amount;
         }
     }
-    pure @safe AtmosMixture remove(AmountOfSubstance amount)
+    pure @safe AtmosMixture remove(AmountOfSubstance amount) /// Removes a certain amount of moles from mix; returns mixture with all removed substance.
     {
         import std.algorithm.comparison : min;
         auto removed = AtmosMixture();
@@ -119,7 +127,7 @@ struct AtmosMixture
         }
         return removed;
     }
-    pure @safe AtmosMixture removeRatio(float ratio)
+    pure @safe AtmosMixture removeRatio(float ratio) /// Removes a percentage of substance from mix; returns mixture with all removed substance.
     in
     {
         assert(ratio>0);
@@ -137,8 +145,9 @@ struct AtmosMixture
         }
         return removed;
     }
-    pure @safe Pressure share(AtmosMixture other, int adjacentTurfs = 4) //none of you are free of sin
+    pure @safe Pressure share(AtmosMixture other, int adjacentTurfs = 4) /// A port of /tg/'s sharing code.
     {
+        //none of you are free of sin
         import std.math : abs;
         const auto temperatureDelta = temperature - other.temperature;
         const auto absTemperatureDelta = abs(temperatureDelta.value(kelvin))*kelvin;
@@ -186,7 +195,7 @@ struct AtmosMixture
             return 0*pascal;
         }
     }
-    pure @nogc @safe Temperature temperatureShare(AtmosMixture other,float conductionCoefficient)
+    pure @nogc @safe Temperature temperatureShare(AtmosMixture other,float conductionCoefficient) /// Port of /tg/ temperature share.
     {
         import std.math : abs;
         import std.algorithm.comparison : max;
@@ -202,7 +211,7 @@ struct AtmosMixture
         other.temperature = max(other.temperature + heat/otherHeatCapacity, cosmicMicrowaveBackground);
         return other.temperature;
     }
-    pure @nogc @safe Temperature temperatureShare(float conductionCoefficient,Temperature otherTemperature,HeatCapacity otherHeatCapacity)
+    pure @nogc @safe Temperature temperatureShare(float conductionCoefficient,Temperature otherTemperature,HeatCapacity otherHeatCapacity) /// ditto
     {
         import std.math : abs;
         import std.algorithm.comparison : max;
@@ -213,7 +222,7 @@ struct AtmosMixture
         otherTemperature = max(otherTemperature + heat/otherHeatCapacity, cosmicMicrowaveBackground);
         return otherTemperature;
     }
-    pure @safe ReactionFlag react()
+    pure @safe ReactionFlag react() /// Goes through every reaction this mixture might have and does them if they can react.
     {
         if(previousResult != ReactionFlag.REACTING && !gases.dirty)
         {
@@ -221,7 +230,7 @@ struct AtmosMixture
         }
         ReactionFlag result = ReactionFlag.NO_REACTION;
         import atmos.reactions : reactions;
-        static foreach(reaction;reactions)
+        static foreach(reaction;reactions) // This is baked in and unrolled at compile time, so no need to mess with this
         {
             if(reaction.canReact(this))
             {
@@ -243,7 +252,7 @@ struct AtmosMixture
         }
         return previousResult=result;
     }
-    @safe string toString()
+    @safe string toString() /// Gives similar results to SS13 analyzer.
     {
         import std.conv : to;
         string retString = "";

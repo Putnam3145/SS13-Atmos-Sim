@@ -406,6 +406,15 @@ pragma(msg,"Defining reactions.");
 
 import std.traits : moduleName;
 
+/*As seen above, order of arguments is: name, function symbol, gas requirements (as array), temperature requirement, energy requirement.
+
+Function symbol can be of any type, but program will not behave right (and hopefully fail to compile) if it doesn't specifically
+have the following signature:
+    pure @safe private ReactionFlag function(ref AtmosMixture)
+
+pure @safe and private aren't required but are definitely preferred.
+*/
+
 @("reaction") enum hypernob = GasReaction!("Hyper-Noblium Reaction Suppression",
                             nobliumSuppress,
                             [GasRequirement(getGas!"nob",5*mole)])();
@@ -461,7 +470,7 @@ alias reactions = getSymbolsByUDA!(atmos.reactions,"reaction");
 
 //not sure what use this stuff will ever have, but hey, it's cool i guess
 
-template reactionHasGas(GasDatum gas)
+private template reactionHasGas(GasDatum gas)
 {
     bool reactionHasGas(alias reaction)() //this shit works??
     {
@@ -479,11 +488,24 @@ template reactionHasGas(GasDatum gas)
 
 import std.meta : Filter, templateAnd;
 
+/**
+    Gets an AliasSeq of all the reactions that require a given gas.
+    Usage: 
+        enum plasReactions = reactionsOfGas!(getGas!"plasma");
+    It should be noted that this can only be used at compile time.
+*/
 alias reactionsOfGas(gas) = Filter!(reactionHasGas!gas,reactions);
+
+/**
+    Gets an AliasSeq of all the reactions that require a given sequence of gases.
+    Usage: 
+        enum plasOxyReactions = reactionsOfGases!(getGas!"plasma",getGas!"o2");
+    It should be noted that this can only be used at compile time.
+*/
 
 alias reactionsOfGases(gases...) = Filter!(templateAnd!(staticMap!(reactionHasGas,gases)),reactions);
 
-template reactionHasOnlyGases(gases...)
+private template reactionHasOnlyGases(gases...)
 {
     bool reactionHasOnlyGases(alias reaction)()
     {
@@ -505,6 +527,13 @@ template reactionHasOnlyGases(gases...)
         return matches==gases.length;
     }
 }
+
+/**
+    Gets an AliasSeq of all the reactions that require a given sequence of gases and ONLY those gases.
+    Usage: 
+        enum plasOxyOnlyReactions = reactionsOfOnlyGases!(getGas!"plasma",getGas!"o2");
+    It should be noted that this can only be used at compile time.
+*/
 
 alias reactionsOfOnlyGases(gases...) = Filter!(reactionHasOnlyGases!gases,reactions);
 
