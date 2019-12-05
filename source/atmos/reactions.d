@@ -340,6 +340,7 @@ pure @safe private ReactionFlag fusion(ref AtmosMixture air)
     enum fusionTritiumConversionCoefficient = 1e-10/joule;
     import std.math; //YEAH ALL OF IT
     Energy reactionEnergy = 0 * joule;
+    const auto initialCapacity = air.heatCapacity;
     const auto initialPlasma = air[getGas!"plasma"];
     const auto initialCarbon = air[getGas!"co2"];
     assert(initialPlasma>=fusionMoleThreshold,"Plasma in fusion somehow less than requirement!");
@@ -356,8 +357,8 @@ pure @safe private ReactionFlag fusion(ref AtmosMixture air)
     const auto instability = pow(gasPower*instabilityGasFactor,2)%toroidalSize;
     auto plasma = (initialPlasma - fusionMoleThreshold) / scaleFactor;
     auto carbon = (initialCarbon - fusionMoleThreshold) / scaleFactor;
-    assert(plasma>0*mole,"Plasma is somehow negative after scaling!");
-    assert(carbon>0*mole,"Plasma is somehow negative after scaling!");
+    assert(plasma>=0*mole,"Plasma is somehow negative after scaling!");
+    assert(carbon>=0*mole,"Carbon is somehow negative after scaling!");
     plasma = abs((plasma.value(mole) - (instability*(sin(carbon.value(mole))))%toroidalSize)) * mole;
     //count the rings. ss13's modulus is positive, this ain't, who knew
     carbon = abs((carbon - plasma).value(mole)%toroidalSize)*mole;
@@ -394,7 +395,7 @@ pure @safe private ReactionFlag fusion(ref AtmosMixture air)
     if(reactionEnergy != 0*joule)
     {
         //radiation, particles here
-        air.temperature = (air.thermalEnergy+reactionEnergy)/air.heatCapacity;
+        air.temperature = (air.temperature*initialCapacity+reactionEnergy)/air.heatCapacity;
         return ReactionFlag.REACTING;
     }
     return ReactionFlag.NO_REACTION;

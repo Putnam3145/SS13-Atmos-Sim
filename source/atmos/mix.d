@@ -75,7 +75,7 @@ struct AtmosMixture
     {
         this(newVolume*liter);
     }
-    pure @nogc @safe HeatCapacity heatCapacity() /// Returns current heat capacity of mixture, in joules/mole-kelvin.
+    pure @nogc @safe HeatCapacity heatCapacity() /// Returns current heat capacity of mixture, in joules/kelvin.
     {
         HeatCapacity totalAmount=0*heatCapacityUnit;
         foreach(GasDatum gas,AmountOfSubstance amount;gases)
